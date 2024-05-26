@@ -5,7 +5,7 @@ namespace UniversityWebApp.Data
     public class DbInitializer
     {
 
-        public static void Initializer(SchoolDbContext context)
+        public static void Initialize(SchoolDbContext context)
         {
             context.Database.EnsureCreated();
             if (context.Students.Any())
