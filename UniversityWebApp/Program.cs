@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.VisualStudio.Web.CodeGeneration.Design;
 using UniversityWebApp.Data;
 
 
@@ -11,39 +12,12 @@ public class Program
     public static void Main(string[] args)
     {
 
-        //////--------------------------------
-        
-            var host= CreateHostBuilder(args).Build();
-        using (var scope = host.Services.CreateScope())
-        {
-            var services = scope.ServiceProvider;
-            try
-            {
-                var context = services.GetRequiredService<SchoolDbContext>();
-                DbInitializer.Initialize(context);
-            }
-            catch (Exception ex)
-            {
-                var logger = services.GetRequiredService<ILogger<Program>>();
-                logger.LogError(ex, "An error occurred while seeding the database.");
-            }
-        }
-        host.Run();
-
-       
-
-     
-
-        /////---------------------------------
-
-        var builder = WebApplication.CreateBuilder(args);
+       var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
         builder.Services.AddControllersWithViews();
-        builder.Services.AddDbContext<SchoolDbContext>(Options =>
-        {
-            Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
-        });
+        builder.Services.AddDbContext<SchoolDbContext>(options =>
+        options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
         builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -58,7 +32,15 @@ public class Program
             app.UseHsts();
         }
 
-        app.UseHttpsRedirection();
+        using (var scope = app.Services.CreateScope())
+        {
+            var services = scope.ServiceProvider;
+            var context = services.GetRequiredService<SchoolDbContext>();
+            context.Database.EnsureCreated();
+         
+        }
+
+            app.UseHttpsRedirection();
         app.UseStaticFiles();
 
         app.UseRouting();
@@ -74,30 +56,4 @@ public class Program
 
     }
 
-        private static void CreateDbIfNotExists(IHost host)
-        {
-            using (var scope = host.Services.CreateScope())
-            {
-                var services = scope.ServiceProvider;
-                try
-                {
-                    var context = services.GetRequiredService<SchoolDbContext>();
-                    DbInitializer.Initialize(context);
-                }
-                catch (Exception ex)
-                {
-                    var logger = services.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred creating the DB.");
-                }
-            }
-        }
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-        .ConfigureWebHostDefaults(webBuilder =>
-        {
-            webBuilder.UseStartup<Program>();
-        });
-
-
-
-    }
+}
